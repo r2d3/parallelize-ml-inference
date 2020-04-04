@@ -7,11 +7,6 @@ import pandas as pd
 import utils
 from itertools import cycle
 
-import mxnet as mx
-from mxnet_model.mxnet_model_factory import MXNetModel
-from mxnet_model.mxnet_input_transformer import transform_input
-
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -44,6 +39,9 @@ def init_worker(gpus, model_param_path):
     Each worker process will pull an GPU ID from a queue of available IDs (e.g. [0, 1, 2, 3]) to ensure that multiple
     GPUs are consumed evenly.
     """
+    import mxnet as mx
+    from mxnet_model.mxnet_model_factory import MXNetModel
+
     global model
     if not gpus.empty():
         gpu_id = gpus.get()
@@ -58,6 +56,8 @@ def init_worker(gpus, model_param_path):
 
 
 def process_input_by_worker_process(input_file_path):
+    from mxnet_model.mxnet_input_transformer import transform_input
+
     logger.debug("processing input {} on pid {}".format(input, str(os.getpid())))
 
     start_time = time.time()
@@ -115,7 +115,9 @@ def generate_input_path_list(input_directory_path, num_inference):
     input_files = os.listdir(input_directory_path)
     input_paths = []
     for file in input_files:
-        input_paths.append(os.path.join(input_directory_path, file))
+        filename, ext = os.path.splitext(file)
+        if ext == ".jpg":
+            input_paths.append(os.path.join(input_directory_path, file))
     repeated_inputs = []
     while len(repeated_inputs) < num_inference:
         repeated_inputs += input_paths
@@ -136,6 +138,7 @@ def main():
     repeated_inputs = generate_input_path_list(input_directory_path, num_inference)
     logger.info("will process {} images".format(len(repeated_inputs)))
 
+    multiprocessing.set_start_method('forkserver', force=True)
     run_inference_in_process_pool(model_param_path, repeated_inputs, num_process, output_path)
 
 

@@ -1,6 +1,6 @@
 import multiprocessing
 import logging
-import mxnet as mx
+import mxnet.test_utils
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +10,7 @@ def detect_gpus():
     logger.info("{} CPUs detected".format(cpu_count))
 
     try:
-        gpus = mx.test_utils.list_gpus()
+        gpus = mxnet.test_utils.list_gpus()
     except:
         gpus = []
 
